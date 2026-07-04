@@ -5,7 +5,7 @@ prometheus.exporter.unix "vps_metrics" {
 }
 
 prometheus.scrape "scrape_vps" {
-  targets         = prometheus.exporter.unix "vps_metrics".targets
+  targets         = prometheus.exporter.unix.vps_metrics.targets
   forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
   scrape_interval = "30s" // Menghemat CPU/RAM dengan interval 30 detik
 }
@@ -13,10 +13,10 @@ prometheus.scrape "scrape_vps" {
 // 2. PENGIRIMAN DATA METRIK KE GRAFANA CLOUD
 prometheus.remote_write "grafana_cloud" {
   endpoint {
-    url = sys.env("GRAFANA_CLOUD_URL")
+    url = env("GRAFANA_CLOUD_URL")
     basic_auth {
-      username = sys.env("GRAFANA_CLOUD_USER")
-      password = sys.env("GRAFANA_CLOUD_TOKEN")
+      username = env("GRAFANA_CLOUD_USER")
+      password = env("GRAFANA_CLOUD_TOKEN")
     }
   }
 }
