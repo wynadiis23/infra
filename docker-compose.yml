@@ -49,11 +49,33 @@ services:
       STAGING_DOMAIN: ${STAGING_DOMAIN}
       PRODUCTION_DOMAIN: ${PRODUCTION_DOMAIN}
       STORAGE_DOMAIN: ${STORAGE_DOMAIN}
-      #SPARKY_FRONTEND_DOMAIN: ${SPARKY_FRONTEND_DOMAIN}
     networks:
       - infra-network
     depends_on:
       - garage
+
+  alloy:
+    image: grafana/alloy:v1.1.0
+    container_name: alloy
+    restart: unless-stopped
+    pid: host
+    environment:
+      - GRAFANA_CLOUD_URL=${GRAFANA_CLOUD_URL}
+      - GRAFANA_CLOUD_USER=${GRAFANA_CLOUD_USER}
+      - GRAFANA_CLOUD_TOKEN=${GRAFANA_CLOUD_TOKEN}
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      # Docker socket tetap di-mount jika ke depan Anda ingin memantau metrik internal container (cadvisor)
+      - /var/run/docker.sock:/var/run/docker.sock:ro 
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    deploy:
+      resources:
+        limits:
+          # Limit diturunkan ke 60M karena Alloy tidak lagi melakukan processing/parsing log yang berat
+          memory: 60M 
+    networks:
+      - infra-network
 
 volumes:
   postgres_data:
