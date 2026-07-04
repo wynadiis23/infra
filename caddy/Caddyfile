@@ -1,0 +1,30 @@
+{$STAGING_DOMAIN} {
+        reverse_proxy simpk-staging:3000
+}
+
+{$PRODUCTION_DOMAIN} {
+        reverse_proxy simpk-production:3000
+}
+
+{$STORAGE_DOMAIN} {
+        reverse_proxy garage:3900 {
+                header_up Host {$STORAGE_DOMAIN}
+        }
+}
+
+sparky.notthebee.web.id {
+        reverse_proxy sparky-frontend:80 {
+        # 1. Force the Host header to match what the user typed
+        header_up Host {host}
+
+        # 2. Tell the backend that the traffic came from a secure HTTPS origin
+        header_up X-Forwarded-Proto https
+
+        # 3. Explicitly pass the user's remote IP address
+        header_up X-Real-IP {remote_host}
+    }
+}
+
+rpd.notthebee.web.id {
+        reverse_proxy realisasi-staging-frontend:80
+}
