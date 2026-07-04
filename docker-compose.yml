@@ -79,10 +79,15 @@ services:
 
 volumes:
   postgres_data:
+    external: true
   garage_meta:
+    external: true
   garage_data:
+    external: true
   caddy_data:
+    external: true
   caddy_config:
+    external: true
 
 networks:
   infra-network:
