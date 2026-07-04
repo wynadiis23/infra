@@ -79,15 +79,15 @@ services:
 
 volumes:
   postgres_data:
-    external: true
+    name: ${COMPOSE_PROJECT_NAME:-infra}_postgres_data
   garage_meta:
-    external: true
+    name: ${COMPOSE_PROJECT_NAME:-infra}_garage_meta
   garage_data:
-    external: true
+    name: ${COMPOSE_PROJECT_NAME:-infra}_garage_data
   caddy_data:
-    external: true
+    name: ${COMPOSE_PROJECT_NAME:-infra}_caddy_data
   caddy_config:
-    external: true
+    name: ${COMPOSE_PROJECT_NAME:-infra}_caddy_config
 
 networks:
   infra-network:

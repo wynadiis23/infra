@@ -64,6 +64,10 @@ copy_if_present() {
   fi
 }
 
+compose() {
+  COMPOSE_PROJECT_NAME="$PROJECT_NAME" docker compose -f "$COMPOSE_FILE" "$@"
+}
+
 PROJECT_NAME=${PROJECT_NAME:-$(basename "$PWD")}
 BACKUP_DIR=${BACKUP_DIR:-/tmp/infra-migration}
 COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.yml}
@@ -78,7 +82,7 @@ case "$command" in
     mkdir -p "$BACKUP_DIR/caddy"
 
     log "Stopping the stack with ${COMPOSE_FILE}"
-    docker compose -f "$COMPOSE_FILE" down
+    compose down
 
     log "Copying config files"
     cp garage.toml "$BACKUP_DIR/garage.toml"
@@ -101,7 +105,7 @@ case "$command" in
     [ -d "$BACKUP_DIR" ] || die "missing backup directory: $BACKUP_DIR"
 
     log "Stopping any running stack with ${COMPOSE_FILE}"
-    docker compose -f "$COMPOSE_FILE" down
+    compose down
 
     log "Restoring config files"
     cp "$BACKUP_DIR/garage.toml" ./garage.toml
@@ -121,7 +125,7 @@ case "$command" in
     restore_tar "${PROJECT_NAME}_caddy_config" caddy_config.tgz
 
     log "Starting the stack"
-    docker compose -f "$COMPOSE_FILE" up -d
+    compose up -d
 
     log "Restore complete"
     ;;
