@@ -68,8 +68,6 @@ services:
       LOKI_USERNAME: ${LOKI_USERNAME}
       LOKI_PASSWORD: ${LOKI_PASSWORD}
       ALLOY_ENV: ${ALLOY_ENV}
-    networks:
-      - infra-network
     command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
     # deploy:
     #   resources:
