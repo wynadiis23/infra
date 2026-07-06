@@ -55,25 +55,27 @@ services:
       - garage
 
   alloy:
-    image: grafana/alloy:v1.1.0
+    image: grafana/alloy:latest
     container_name: alloy
     restart: unless-stopped
-    pid: host
-    environment:
-      - GRAFANA_CLOUD_URL=${GRAFANA_CLOUD_URL}
-      - GRAFANA_CLOUD_USER=${GRAFANA_CLOUD_USER}
-      - GRAFANA_CLOUD_TOKEN=${GRAFANA_CLOUD_TOKEN}
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
-      # Docker socket tetap di-mount jika ke depan Anda ingin memantau metrik internal container (cadvisor)
-      - /var/run/docker.sock:/var/run/docker.sock:ro 
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-    deploy:
-      resources:
-        limits:
-          # Limit diturunkan ke 60M karena Alloy tidak lagi melakukan processing/parsing log yang berat
-          memory: 60M 
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - alloy_data:/var/lib/alloy/data
+    environment:
+      LOKI_URL: ${LOKI_URL}
+      LOKI_USERNAME: ${LOKI_USERNAME}
+      LOKI_PASSWORD: ${LOKI_PASSWORD}
+      ALLOY_ENV: ${ALLOY_ENV}
+    networks:
+      - infra-network
+    command: run --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    # deploy:
+    #   resources:
+    #     limits:
+    #       # Limit diturunkan ke 60M karena Alloy tidak lagi melakukan processing/parsing log yang berat
+    #       memory: 60M 
     networks:
       - infra-network
 
@@ -88,6 +90,8 @@ volumes:
     name: ${COMPOSE_PROJECT_NAME:-infra}_caddy_data
   caddy_config:
     name: ${COMPOSE_PROJECT_NAME:-infra}_caddy_config
+  alloy_data:
+    name: ${COMPOSE_PROJECT_NAME:-infra}_alloy_data
 
 networks:
   infra-network:

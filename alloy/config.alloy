@@ -1,22 +1,70 @@
-// 1. MENGUMPULKAN METRIK VPS (CPU, RAM, & DISK)
-prometheus.exporter.unix "vps_metrics" {
-  procfs_path = "/host/proc"
-  sysfs_path  = "/host/sys"
-}
-
-prometheus.scrape "scrape_vps" {
-  targets         = prometheus.exporter.unix.vps_metrics.targets
-  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
-  scrape_interval = "30s" // Menghemat CPU/RAM dengan interval 30 detik
-}
-
-// 2. PENGIRIMAN DATA METRIK KE GRAFANA CLOUD
-prometheus.remote_write "grafana_cloud" {
+loki.write "default" {
   endpoint {
-    url = env("GRAFANA_CLOUD_URL")
+    url    = env("LOKI_URL")
     basic_auth {
-      username = env("GRAFANA_CLOUD_USER")
-      password = env("GRAFANA_CLOUD_TOKEN")
+      username = env("LOKI_USERNAME")
+      password = env("LOKI_PASSWORD")
     }
   }
+  external_labels = {
+    environment = env("ALLOY_ENV"),
+  }
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name = "simpk-*"
+  }
+}
+
+loki.source.docker "default" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.containers.targets
+  labels     = {
+    app = "simpk",
+  }
+  forward_to = [loki.process.logs.receiver]
+}
+
+loki.process "logs" {
+  // Parse Docker's JSON envelope
+  stage.json {
+    expressions = {
+      log_line = "log",
+      source   = "stream",
+    }
+  }
+  // Parse pino's JSON log line
+  stage.json {
+    source = "log_line"
+    expressions = {
+      level      = "level",
+      msg        = "msg",
+      request_id = "requestId",
+      pino_time  = "time",
+    }
+  }
+  // Convert pino level number to string
+  stage.template {
+    source   = "level"
+    template = `{{ if eq .Value "10" }}trace{{ else if eq .Value "20" }}debug{{ else if eq .Value "30" }}info{{ else if eq .Value "40" }}warn{{ else if eq .Value "50" }}error{{ else if eq .Value "60" }}fatal{{ end }}`
+  }
+  // Low-cardinality labels
+  stage.labels {
+    values = {
+      level  = "level",
+      source = "source",
+    }
+  }
+  // Use pino's timestamp
+  stage.timestamp {
+    source = "pino_time"
+    format = "UnixMs"
+  }
+  // Drop intermediate fields (keep msg, request_id as structured metadata)
+  stage.label_drop {
+    values = ["log_line", "pino_time"]
+  }
+  forward_to = [loki.write.default.receiver]
 }
