@@ -11,6 +11,7 @@ loki.write "default" {
   }
 }
 
+// SIMPK discovery
 discovery.docker "simpk" {
   host = "unix:///var/run/docker.sock"
   filter {
@@ -27,6 +28,7 @@ loki.source.docker "simpk" {
   }
   forward_to = [loki.process.logs.receiver]
 }
+// end SIMPK discovery
 
 loki.process "logs" {
   // Parse Docker's JSON envelope
