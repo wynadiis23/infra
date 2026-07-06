@@ -11,18 +11,19 @@ loki.write "default" {
   }
 }
 
-discovery.docker "containers" {
+discovery.docker "simpk" {
   host = "unix:///var/run/docker.sock"
   filter {
-    name = "simpk-*"
+    name = "name"
+    values = ["simpk-staging"]
   }
 }
 
-loki.source.docker "default" {
+loki.source.docker "simpk" {
   host       = "unix:///var/run/docker.sock"
-  targets    = discovery.docker.containers.targets
+  targets    = discovery.docker.simpk.targets
   labels     = {
-    app = "simpk",
+    app = "simpk-staging",
   }
   forward_to = [loki.process.logs.receiver]
 }
